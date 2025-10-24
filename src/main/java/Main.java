@@ -1,108 +1,153 @@
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 public class Main {
-  public static void main(String[] args){
-    if (args.length != 2 || !args[0].equals("-E")) {
-      System.out.println("Usage: ./your_program.sh -E <pattern>");
-      System.exit(1);
-    }
-
-    String pattern = args[1];  
-    Scanner scanner = new Scanner(System.in);
-    String inputLine = scanner.nextLine();
-    
-    if (matchPattern(inputLine, pattern)) {
-        System.exit(0);
-    } else {
-        System.exit(1);
-    }
-  }
-
-  public static boolean matchPattern(String inputLine, String pattern) {
-    if(pattern.equals("\\d")){
-      return hasDigit(inputLine);
-    }else if(pattern.equals("\\w")){
-      return hasWord(inputLine);
-    }else if(pattern.startsWith("[^") && pattern.endsWith("]")){
-      return isNegativeCharacterGroup(inputLine, pattern.substring(1,pattern.length()-1));
-    }else if(pattern.startsWith("[") && pattern.endsWith("]")){
-      return isPositiveCharacterGroup(inputLine, pattern.substring(1,pattern.length()-1));
-    }else if(pattern.startsWith("^")){
-      return matchStart(inputLine, pattern.substring(1));
-    }
-
-    if (pattern.length() > 0) {
-      System.out.println("matching");
-      for(int i=0; i<inputLine.length(); ++i){
-        if(matchStart(inputLine.substring(i), pattern)){
-          return true;
+    public static void main(String[] args) {
+        if (args.length != 2 || !args[0].equals("-E")) {
+            System.out.println("Usage: ./your_program.sh -E <pattern>");
+            System.exit(1);
         }
-      }
-      return false;
-      // return inputLine.contains(pattern);
-    } else {
-      throw new RuntimeException("Unhandled pattern: " + pattern);
+
+        String pattern = args[1];
+        Scanner scanner = new Scanner(System.in);
+        String inputLine = scanner.nextLine();
+
+        // You can use print statements as follows for debugging, they'll be visible
+        // when running tests.
+        System.err.println("Logs from your program will appear here!");
+
+        // Uncomment this block to pass the first stage
+        //
+        if (matchPattern(inputLine, pattern)) {
+            System.out.println("Match Pattern!");
+            System.exit(0);
+        } else {
+            System.out.println("No Mathch Pattern");
+            System.exit(1);
+        }
     }
-  }
 
-  public static boolean matchStart(String inputLine, String pattern){
-    if(pattern.length() == 0) return true;
-    if(pattern.startsWith("\\d")){
-      return inputLine.length()>0 && isDigit(inputLine.charAt(0)) && matchStart(inputLine.substring(1), pattern.substring(2));
-    } else if(pattern.startsWith("\\w")){
-      return inputLine.length()>0 && isWordCharacter(inputLine.charAt(0)) && matchStart(inputLine.substring(1), pattern.substring(2));
-    } else if(pattern.equals("$")){
-      return inputLine.length()==0;
+    public static boolean matchPattern(String inputLine, String pattern) {
+        if (pattern.length() == 1) {
+            return inputLine.contains(pattern);
+        } else if (pattern.startsWith("[") && pattern.endsWith("]")) {
+            pattern = pattern.substring(1, pattern.indexOf("]"));
+            if (pattern.charAt(0) == '^') {
+                pattern = pattern.substring(1);
+                return findContainsChar(inputLine, pattern, false);
+            } else {
+                return findContainsChar(inputLine, pattern, true);
+            }
+        } else {
+            // throw new RuntimeException("Unhandled pattern: " + pattern);
+            return matchEach(inputLine, pattern);
+        }
     }
-    else{
-      // System.out.println("pattern : " + pattern);
-      // System.out.println("inputLine : " + inputLine);
-      return inputLine.length()>0 && pattern.charAt(0) == inputLine.charAt(0) && matchStart(inputLine.substring(1), pattern.substring(1));
+
+    public static boolean matchEach(String text, String pattern) {
+        if (pattern.charAt(0) == '^') {
+            pattern = pattern.substring(1);
+            if (pattern.endsWith("$")) {
+                pattern = pattern.substring(0, pattern.indexOf("$"));
+                return text.equals(pattern);
+            }
+            return pattern.equals(text.substring(0, pattern.length()));
+        }
+        if (pattern.endsWith("$")) {
+            pattern = pattern.substring(0, pattern.indexOf("$"));
+            return pattern.equals(text.substring(text.length() - pattern.length()));
+        }
+
+        int len = pattern.length();
+        int idx = 0;
+        for (int i = 0; i < text.length(); i++) {
+            if (idx + 1 < len
+                    && pattern.charAt(idx) == '\\'
+                    && pattern.charAt(idx + 1) == 'd'
+                    && isDigit(text.charAt(i))) {
+                idx += 2;
+            } else if (idx + 1 < len
+                    && pattern.charAt(idx) == '\\'
+                    && pattern.charAt(idx + 1) == 'w'
+                    && (isDigit(text.charAt(i))
+                            || isLetter(text.charAt(i))
+                            || text.charAt(i) == '_')) {
+                idx += 2;
+            } else if (pattern.charAt(idx) == text.charAt(i)) {
+                idx++;
+            } else if (pattern.charAt(idx) == '+') {
+                int j = idx + 1;
+                while (j < len && pattern.charAt(j) == pattern.charAt(idx - 1)) j++;
+                int dt = j - idx - 1;
+                int m = 0;
+                while (i < text.length() && text.charAt(i) == pattern.charAt(idx - 1)) {
+                    i++;
+                    m++;
+                }
+                i--;
+                if (m < dt) return false;
+                i -= dt;
+                idx++;
+            } else {
+                idx = 0;
+            }
+            if (idx == len) {
+                return true;
+            }
+        }
+        return false;
     }
-  }
 
-
-  private static boolean hasDigit(String inputLine){
-    for(int i=0; i<10; ++i){
-      if(inputLine.contains(""+i)) return true;
+    public static boolean matchSufEach(String inputString, String pattern) {
+        return pattern.equals(inputString.substring(inputString.length() - pattern.length()));
     }
-    return false;
-  }
 
-  private static boolean isPositiveCharacterGroup(String inputLine, String chars){
-    for(char c : chars.toCharArray()){
-      if(inputLine.contains(""+c)) return true;
+    public static boolean matchPreEach(String inputString, String pattern) {
+        return pattern.equals(inputString.substring(0, pattern.length()));
     }
-    return false;
-  }
 
-  private static boolean isNegativeCharacterGroup(String inputLine, String chars){
-    for(char c: inputLine.toCharArray()){
-      if(!chars.contains(""+c)) return true;
+    public static boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
     }
-    return false;
-  }
 
-  private static boolean isLowerAlphabet(char c){
-    return c-'a'>=0 && c-'a'<26;
-  }
-
-  private static boolean isUpperAlphabet(char c){
-    return c-'A'>=0 && c-'A'<26;
-  }
-
-  private static boolean isDigit(char c){
-    return c-'0'>=0 && c-'0'<=9;
-  }
-
-  private static boolean hasWord(String inputLine){
-    for(char c: inputLine.toCharArray()){
-      if(isWordCharacter(c)) return true;
+    public static boolean isLetter(char c) {
+        return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
     }
-    return false;
-  }
 
-  private static boolean isWordCharacter(char c){
-    return (isLowerAlphabet(c) || isUpperAlphabet(c) || isDigit(c) || c == '_');
-  }
+    public static boolean isContainsDigit(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (isDigit(s.charAt(i))) return true;
+        }
+        return false;
+    }
+
+    public static boolean isContainsLetter(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (isDigit(s.charAt(i)) || isLetter(s.charAt(i)) || c == '_') return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param inputString
+     * @param pattern
+     * @param is true: contain，false: not contain
+     * @return
+     */
+    public static boolean findContainsChar(String inputString, String pattern, boolean is) {
+        Set<Character> set = new HashSet<>();
+        for (char c : pattern.toCharArray()) {
+            set.add(c);
+        }
+        for (int i = 0; i < inputString.length(); i++) {
+            if (set.contains(inputString.charAt(i)) == is) {
+                set.clear();
+                return true;
+            }
+        }
+        set.clear();
+        return false;
+    }
 }
