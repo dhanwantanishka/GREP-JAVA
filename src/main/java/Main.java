@@ -10,8 +10,13 @@ public class Main {
         String pattern = args[1];
         Scanner scanner = new Scanner(System.in);
         String inputLine = scanner.nextLine();
-        scanner.close();
 
+        // You can use print statements as follows for debugging, they'll be visible when running
+        // tests.
+        System.err.println("Logs from your program will appear here!");
+
+        // Uncomment this block to pass the first stage
+        //
         if (matchPattern(inputLine, pattern)) {
             System.exit(0);
         } else {
@@ -22,13 +27,14 @@ public class Main {
     public static boolean matchPattern(String inputLine, String pattern) {
         if (pattern.length() == 1) {
             return inputLine.contains(pattern);
-        } else if (pattern.equals("\\d")) {
-            return inputLine.chars().anyMatch(Character::isDigit);
-        } else if (pattern.equals("\\w")) {
-            return inputLine.chars().anyMatch(ch -> Character.isLetterOrDigit(ch) || ch == '_');
-        } else if (pattern.charAt(0) == '[' && pattern.charAt(pattern.length() - 1) == ']') {
-            String charClass = pattern.substring(1, pattern.length() - 1);
-            return inputLine.chars().anyMatch(ch -> charClass.indexOf(ch) != -1);
+        } else if (pattern.contains("\\d")) return inputLine.chars().anyMatch(Character::isDigit);
+        else if (pattern.contains("\\w"))
+            return inputLine.chars().anyMatch(a -> Character.isLetterOrDigit(a) || a == '_');
+        else if (pattern.startsWith("[") && pattern.endsWith("]") && pattern.length() > 2) {
+            String ss = pattern.substring(1, pattern.length() - 1);
+            if (ss.startsWith("^"))
+                return inputLine.chars().anyMatch(c -> ss.substring(1).indexOf(c) == -1);
+            return inputLine.chars().anyMatch(a -> ss.indexOf(a) >= 0);
         } else {
             throw new RuntimeException("Unhandled pattern: " + pattern);
         }
