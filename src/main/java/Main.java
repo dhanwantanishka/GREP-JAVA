@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
@@ -11,32 +12,50 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         String inputLine = scanner.nextLine();
 
-        // You can use print statements as follows for debugging, they'll be visible when running
-        // tests.
-        System.err.println("Logs from your program will appear here!");
-
-        // Uncomment this block to pass the first stage
-        //
         if (matchPattern(inputLine, pattern)) {
             System.exit(0);
         } else {
             System.exit(1);
         }
+        scanner.close();
     }
 
     public static boolean matchPattern(String inputLine, String pattern) {
-        if (pattern.length() == 1) {
-            return inputLine.contains(pattern);
-        } else if (pattern.contains("\\d")) return inputLine.chars().anyMatch(Character::isDigit);
-        else if (pattern.contains("\\w"))
-            return inputLine.chars().anyMatch(a -> Character.isLetterOrDigit(a) || a == '_');
-        else if (pattern.startsWith("[") && pattern.endsWith("]") && pattern.length() > 2) {
-            String ss = pattern.substring(1, pattern.length() - 1);
-            if (ss.startsWith("^"))
-                return inputLine.chars().anyMatch(c -> ss.substring(1).indexOf(c) == -1);
-            return inputLine.chars().anyMatch(a -> ss.indexOf(a) >= 0);
-        } else {
-            throw new RuntimeException("Unhandled pattern: " + pattern);
+        ArrayList<RegexMatcher> regex = new ArrayList<>();
+        for (int i = 0; i < pattern.length(); i++) {
+            if (pattern.charAt(i) == '\\') {
+                i++;
+                switch (pattern.charAt(i)) {
+                    case 'd':
+                        regex.add(new RangeMatcher("0-9"));
+                        break;
+                    case 'w':
+                        regex.add(new RangeMatcher("a-z", "A-Z", "0-9", "_"));
+                        break;
+                    default:
+                        break;
+                }
+            } else if (pattern.charAt(i) == '[') {
+                int endIndex = pattern.indexOf(']', i);
+                if (pattern.charAt(i + 1) == '^') {
+                    String sub = pattern.substring(i + 2, endIndex);
+                    regex.add(new NegativeRangeMatcher(sub));
+                } else {
+                    String sub = pattern.substring(i + 1, endIndex);
+                    regex.add(new RangeMatcher(sub)); // Change to handle a-c, \d, etc.
+                }
+                i = endIndex;
+            } else {
+                regex.add(new CharacterMatcher(pattern.charAt(i)));
+            }
         }
+        int testIndex = regex.get(0).match(inputLine);
+        for (RegexMatcher matcher : regex) {
+            if (testIndex == -1 || !matcher.test(inputLine.charAt(testIndex))) {
+                return false;
+            }
+            testIndex++;
+        }
+        return true;
     }
 }
