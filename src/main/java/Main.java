@@ -10,10 +10,7 @@ public class Main {
         String pattern = args[1];
         Scanner scanner = new Scanner(System.in);
         String inputLine = scanner.nextLine();
-
-        // You can use print statements as follows for debugging, they'll be visible when running
-        // tests.
-        System.err.println("Logs from your program will appear here!");
+        scanner.close();
 
         if (matchPattern(inputLine, pattern)) {
             System.exit(0);
@@ -26,38 +23,14 @@ public class Main {
         if (pattern.length() == 1) {
             return inputLine.contains(pattern);
         } else if (pattern.equals("\\d")) {
-            return matchDigit(inputLine);
+            return inputLine.chars().anyMatch(Character::isDigit);
         } else if (pattern.equals("\\w")) {
-            return matchWordCharacters(inputLine);
+            return inputLine.chars().anyMatch(ch -> Character.isLetterOrDigit(ch) || ch == '_');
+        } else if (pattern.charAt(0) == '[' && pattern.charAt(pattern.length() - 1) == ']') {
+            String charClass = pattern.substring(1, pattern.length() - 1);
+            return inputLine.chars().anyMatch(ch -> charClass.indexOf(ch) != -1);
         } else {
             throw new RuntimeException("Unhandled pattern: " + pattern);
         }
-    }
-
-    private static Boolean matchDigit(String input) {
-        Integer[] numbers = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-        boolean result = false;
-
-        for (int number : numbers) {
-            if (input.contains(String.valueOf(number))) {
-                result = true;
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    private static Boolean matchWordCharacters(String input) {
-        boolean result = false;
-        for (int i = 0; i < input.length(); i++) {
-            char temp = input.charAt(i);
-            result = Character.isLetter(temp) || Character.isDigit(temp) || temp == '_';
-            if (result) {
-                break;
-            }
-        }
-
-        return result;
     }
 }
