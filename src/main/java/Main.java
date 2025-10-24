@@ -1,6 +1,4 @@
-import java.util.HashSet;
 import java.util.Scanner;
-import java.util.Set;
 
 public class Main {
   public static void main(String[] args){
@@ -12,68 +10,99 @@ public class Main {
     String pattern = args[1];  
     Scanner scanner = new Scanner(System.in);
     String inputLine = scanner.nextLine();
-
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    System.err.println("Logs from your program will appear here!");
-
-     //Uncomment this block to pass the first stage
-
-     if (matchPattern(inputLine, pattern)) {
-         System.exit(0);
-     } else {
-         System.exit(1);
-     }
+    
+    if (matchPattern(inputLine, pattern)) {
+        System.exit(0);
+    } else {
+        System.exit(1);
+    }
   }
 
   public static boolean matchPattern(String inputLine, String pattern) {
-    if (pattern.length() == 1) {
-      return inputLine.contains(pattern);
-    } else if(pattern.equals("\\d")){
-      for(char ch: inputLine.toCharArray()) if(Character.isDigit(ch)) return true;
-      return false;
-    } else if(pattern.equals("\\w")){
-      for(char ch: inputLine.toCharArray()) if(Character.isAlphabetic(ch) || Character.isDigit(ch) || ch == '_') return true;
-      return false;
-    } else if(pattern.startsWith("[") && pattern.endsWith("]")){
-      Set<Character> set = new HashSet<>();
-      char[] chars = pattern.substring(1, pattern.length()-1).toCharArray();
-      for(char ch: chars) set.add(ch);
-      if(chars[0] == '^') {
-        for(char ch: inputLine.toCharArray()) if(!set.contains(ch)) return true;
-        return false;
+    if(pattern.equals("\\d")){
+      return hasDigit(inputLine);
+    }else if(pattern.equals("\\w")){
+      return hasWord(inputLine);
+    }else if(pattern.startsWith("[^") && pattern.endsWith("]")){
+      return isNegativeCharacterGroup(inputLine, pattern.substring(1,pattern.length()-1));
+    }else if(pattern.startsWith("[") && pattern.endsWith("]")){
+      return isPositiveCharacterGroup(inputLine, pattern.substring(1,pattern.length()-1));
+    }else if(pattern.startsWith("^")){
+      return matchStart(inputLine, pattern.substring(1));
+    }
+
+    if (pattern.length() > 0) {
+      System.out.println("matching");
+      for(int i=0; i<inputLine.length(); ++i){
+        if(matchStart(inputLine.substring(i), pattern)){
+          return true;
+        }
       }
-      else {
-        for(char ch: inputLine.toCharArray()) if(set.contains(ch)) return true;
-        return false;
-      }
-    } else if(!pattern.isEmpty()){
-        return match(inputLine, pattern);
+      return false;
+      // return inputLine.contains(pattern);
     } else {
       throw new RuntimeException("Unhandled pattern: " + pattern);
     }
   }
 
-  public static boolean match(String str, String pattern) {
-    int n = str.length(), i = 0;
-    if(pattern.charAt(0) == '^') return matchStr(str, pattern.substring(1), 0, 0);
-    while(i < n){
-      if(matchStr(str.substring(i), pattern, 0, 0)) return true;
-      i++;
+  public static boolean matchStart(String inputLine, String pattern){
+    if(pattern.length() == 0) return true;
+    if(pattern.startsWith("\\d")){
+      return inputLine.length()>0 && isDigit(inputLine.charAt(0)) && matchStart(inputLine.substring(1), pattern.substring(2));
+    } else if(pattern.startsWith("\\w")){
+      return inputLine.length()>0 && isWordCharacter(inputLine.charAt(0)) && matchStart(inputLine.substring(1), pattern.substring(2));
+    } else if(pattern.equals("$")){
+      return inputLine.length()==0;
+    }
+    else{
+      // System.out.println("pattern : " + pattern);
+      // System.out.println("inputLine : " + inputLine);
+      return inputLine.length()>0 && pattern.charAt(0) == inputLine.charAt(0) && matchStart(inputLine.substring(1), pattern.substring(1));
+    }
+  }
+
+
+  private static boolean hasDigit(String inputLine){
+    for(int i=0; i<10; ++i){
+      if(inputLine.contains(""+i)) return true;
     }
     return false;
   }
 
-  private static boolean matchStr(String str, String pattern, int s, int p) {
-    if(p >= pattern.length()) return true;
-    if(s >= str.length()) return false;
-    char cur_str_ch = str.charAt(s), cur_pattern_ch = pattern.charAt(p);
-    if(cur_str_ch == cur_pattern_ch) return matchStr(str, pattern, s+1, p+1);
-    else if(cur_pattern_ch == '\\'){
-      char next_patter_char = pattern.charAt(p+1);
-      if(next_patter_char == 'd' && Character.isDigit(cur_str_ch)) return matchStr(str, pattern, s+1, p+2);
-      else if(next_patter_char == 'w' && Character.isAlphabetic(cur_str_ch)) return matchStr(str, pattern, s+1, p+2);
-      else return false;
+  private static boolean isPositiveCharacterGroup(String inputLine, String chars){
+    for(char c : chars.toCharArray()){
+      if(inputLine.contains(""+c)) return true;
     }
     return false;
+  }
+
+  private static boolean isNegativeCharacterGroup(String inputLine, String chars){
+    for(char c: inputLine.toCharArray()){
+      if(!chars.contains(""+c)) return true;
+    }
+    return false;
+  }
+
+  private static boolean isLowerAlphabet(char c){
+    return c-'a'>=0 && c-'a'<26;
+  }
+
+  private static boolean isUpperAlphabet(char c){
+    return c-'A'>=0 && c-'A'<26;
+  }
+
+  private static boolean isDigit(char c){
+    return c-'0'>=0 && c-'0'<=9;
+  }
+
+  private static boolean hasWord(String inputLine){
+    for(char c: inputLine.toCharArray()){
+      if(isWordCharacter(c)) return true;
+    }
+    return false;
+  }
+
+  private static boolean isWordCharacter(char c){
+    return (isLowerAlphabet(c) || isUpperAlphabet(c) || isDigit(c) || c == '_');
   }
 }
