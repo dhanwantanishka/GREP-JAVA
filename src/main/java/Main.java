@@ -1,6 +1,3 @@
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -10,38 +7,57 @@ public class Main {
             System.exit(1);
         }
 
-        List<String> test = new ArrayList<>();
-
         String pattern = args[1];
         Scanner scanner = new Scanner(System.in);
         String inputLine = scanner.nextLine();
 
-        if (handlePattern(inputLine, pattern)) {
+        // You can use print statements as follows for debugging, they'll be visible when running
+        // tests.
+        System.err.println("Logs from your program will appear here!");
+
+        if (matchPattern(inputLine, pattern)) {
             System.exit(0);
         } else {
             System.exit(1);
         }
     }
 
-    public static boolean handlePattern(String inputLine, String pattern) {
-
-        if (pattern.equals("\\d")) {
-            return handleDigitalCharacterClass(inputLine);
-        }
+    public static boolean matchPattern(String inputLine, String pattern) {
         if (pattern.length() == 1) {
-            return handleSingleLetterPattern(inputLine, pattern);
+            return inputLine.contains(pattern);
+        } else if (pattern.equals("\\d")) {
+            return matchDigit(inputLine);
+        } else if (pattern.equals("\\w")) {
+            return matchWordCharacters(inputLine);
+        } else {
+            throw new RuntimeException("Unhandled pattern: " + pattern);
+        }
+    }
+
+    private static Boolean matchDigit(String input) {
+        Integer[] numbers = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+        boolean result = false;
+
+        for (int number : numbers) {
+            if (input.contains(String.valueOf(number))) {
+                result = true;
+                break;
+            }
         }
 
-        throw new RuntimeException("Unhandled pattern: " + pattern);
+        return result;
     }
 
-    public static boolean handleDigitalCharacterClass(String inputLine) {
-        final List<String> digits = Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-        return digits.stream().anyMatch(inputLine::contains);
-    }
+    private static Boolean matchWordCharacters(String input) {
+        boolean result = false;
+        for (int i = 0; i < input.length(); i++) {
+            char temp = input.charAt(i);
+            result = Character.isLetter(temp) || Character.isDigit(temp) || temp == '_';
+            if (result) {
+                break;
+            }
+        }
 
-    public static boolean handleSingleLetterPattern(String inputLine, String pattern) {
-        return inputLine.contains(pattern);
+        return result;
     }
-
 }
