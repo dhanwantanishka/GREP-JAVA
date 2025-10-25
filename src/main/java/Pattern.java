@@ -6,15 +6,15 @@ public class Pattern {
     public final Anchor anchor;
 
     public Pattern(String patternString) {
-        if (patternString.isEmpty())
-            throw new RuntimeException("Unhandled pattern: " + patternString);
+        if (patternString.isEmpty()) throw new RuntimeException("Unhandled pattern: " + patternString);
         int beginIdx = 0;
         int endIdx = patternString.length();
         if (patternString.startsWith("^")) {
             if (patternString.endsWith("$")) {
                 anchor = Anchor.EXACT;
                 endIdx--;
-            } else anchor = Anchor.START_OF_LINE;
+            } else
+                anchor = Anchor.START_OF_LINE;
             beginIdx++;
         } else if (patternString.endsWith("$")) {
             anchor = Anchor.END_OF_LINE;
@@ -31,10 +31,11 @@ public class Pattern {
         int idx = 0;
         char[] arrPattern = pattern.toCharArray();
         while (idx < arrPattern.length) {
-            if (arrPattern[idx] == '+') {
-                ls.getLast().quantifier = Quantifier.GREEDY_PLUS;
+            if (arrPattern[idx] == '+') { // considers + as a normal regex token and a star regex token.
+                ls.add(ls.getLast().clone());
+                ls.getLast().quantifier = Quantifier.GREEDY_STAR;
             } else if (arrPattern[idx] == '?') {
-                ls.getLast().quantifier = Quantifier.ZERO_OR_ONE;
+                ls.getLast().quantifier = Quantifier.GREEDY_STAR;
             } else if (arrPattern[idx] == '\\') {
                 if (idx + 1 == arrPattern.length) return null;
                 switch (arrPattern[idx + 1]) {
@@ -45,7 +46,8 @@ public class Pattern {
                         ls.add(new DigitCharacterClass());
                         break;
                     default:
-                        return null;
+                        ls.add(new CharLiteral(arrPattern[idx + 1]));
+                        break;
                 }
                 idx++;
             } else if (arrPattern[idx] == '[') {
@@ -58,6 +60,8 @@ public class Pattern {
                 CharacterSet characterSet = getPatternCharacterSet(pattern, start, idx - 1);
                 if (characterSet == null) return null;
                 ls.add(new CharSetCharacterClass(characterSet));
+            } else if (arrPattern[idx] == '.') {
+                ls.add(new WildCard());
             } else {
                 ls.add(new CharLiteral(arrPattern[idx]));
             }
@@ -102,34 +106,25 @@ public class Pattern {
         return false;
     }
 
-    /** return the index from the "string" after matching the found pattern */
+    /**
+     * return the index from the "string" after matching the found pattern
+     */
     private int match(String string, int stringStart, int patternStart) {
         int patternIdx = patternStart;
         int stringIdx = stringStart;
         while (patternIdx < pattern.size() && stringIdx < string.length()) {
             RegexToken curr = pattern.get(patternIdx);
-            if (curr.quantifier == Quantifier.ZERO_OR_ONE) {
-                // Try matching zero times (skip this token)
-                int match = match(string, stringIdx, patternIdx + 1);
+            if (curr.quantifier == Quantifier.GREEDY_STAR) {
+//                int count = 0;
+                int match = match(string, stringIdx, patternIdx + 1); // skip the token
                 if (match != -1) return match;
-                
-                // Try matching one time
-                if (stringIdx < string.length() && curr.doesItAllow(string.charAt(stringIdx))) {
-                    match = match(string, stringIdx + 1, patternIdx + 1);
-                    if (match != -1) return match;
-                }
-                return -1;
-            } else if (curr.quantifier == Quantifier.GREEDY_PLUS) {
-                int count = 0;
                 while (stringIdx < string.length() && curr.doesItAllow(string.charAt(stringIdx))) {
                     stringIdx++;
-                    count++;
-                    int match = match(string, stringIdx, patternIdx + 1);
+                    match = match(string, stringIdx, patternIdx + 1);
                     if (match != -1) return match;
                 }
                 patternIdx++;
-                if (count > 0) continue;
-                return -1;
+                continue;
             }
             if (!curr.doesItAllow(string.charAt(stringIdx))) {
                 return -1;
@@ -137,7 +132,8 @@ public class Pattern {
             patternIdx++;
             stringIdx++;
         }
-        if (patternIdx != pattern.size()) return -1;
+        if (patternIdx != pattern.size())
+            return -1;
         return stringIdx;
     }
 

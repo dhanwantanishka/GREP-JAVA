@@ -8,8 +8,10 @@ public class Main {
         }
 
         String pattern = args[1];
-        Scanner scanner = new Scanner(System.in);
-        String inputLine = scanner.nextLine();
+        String inputLine;
+        try (Scanner scanner = new Scanner(System.in)) {
+            inputLine = scanner.nextLine();
+        }
         System.err.println("Logs from your program will appear here!");
 
         if (matchPattern(inputLine, pattern)) {
