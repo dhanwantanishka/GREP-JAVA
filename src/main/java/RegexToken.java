@@ -73,6 +73,7 @@ enum CharacterSetKind {
 }
 enum Quantifier{
     GREEDY_PLUS,
+    ZERO_OR_ONE,
     NONE
 }
 

@@ -33,6 +33,8 @@ public class Pattern {
         while (idx < arrPattern.length) {
             if (arrPattern[idx] == '+') {
                 ls.getLast().quantifier = Quantifier.GREEDY_PLUS;
+            } else if (arrPattern[idx] == '?') {
+                ls.getLast().quantifier = Quantifier.ZERO_OR_ONE;
             } else if (arrPattern[idx] == '\\') {
                 if (idx + 1 == arrPattern.length) return null;
                 switch (arrPattern[idx + 1]) {
@@ -106,7 +108,18 @@ public class Pattern {
         int stringIdx = stringStart;
         while (patternIdx < pattern.size() && stringIdx < string.length()) {
             RegexToken curr = pattern.get(patternIdx);
-            if (curr.quantifier == Quantifier.GREEDY_PLUS) {
+            if (curr.quantifier == Quantifier.ZERO_OR_ONE) {
+                // Try matching zero times (skip this token)
+                int match = match(string, stringIdx, patternIdx + 1);
+                if (match != -1) return match;
+                
+                // Try matching one time
+                if (stringIdx < string.length() && curr.doesItAllow(string.charAt(stringIdx))) {
+                    match = match(string, stringIdx + 1, patternIdx + 1);
+                    if (match != -1) return match;
+                }
+                return -1;
+            } else if (curr.quantifier == Quantifier.GREEDY_PLUS) {
                 int count = 0;
                 while (stringIdx < string.length() && curr.doesItAllow(string.charAt(stringIdx))) {
                     stringIdx++;
