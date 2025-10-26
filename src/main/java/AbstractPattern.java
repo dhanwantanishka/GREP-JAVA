@@ -4,6 +4,7 @@ public abstract class AbstractPattern implements PatternInt {
 
     protected Quantifier quantifier = Quantifier.EXACTLY_ONE;
     protected String patternString;
+    protected String capturedText;
 
     private int countMatches = 0;
 
@@ -63,5 +64,15 @@ public abstract class AbstractPattern implements PatternInt {
     @Override
     public int hashCode() {
         return Objects.hash(quantifier, patternString);
+    }
+    
+    @Override
+    public void setCapturedText(String capturedText) {
+        this.capturedText = capturedText;
+    }
+    
+    @Override
+    public String getCapturedText() {
+        return capturedText;
     }
 }

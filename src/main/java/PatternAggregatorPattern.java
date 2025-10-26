@@ -12,6 +12,10 @@ public class PatternAggregatorPattern extends AbstractPattern {
 
             PatternResult r = new PatternResult(grepResult.getMatch());
             r.setCaptureGroup(grepResult.getCapture());
+            // Store the captured text for backreferences
+            if (grepResult.getCapture() != null) {
+                setCapturedText(grepResult.getCapture());
+            }
             System.err.println("PatternAggregatorPattern r=" + r.match + " capture=" + r.captureGroup);
             System.out.println("*** END PAP ***");
 

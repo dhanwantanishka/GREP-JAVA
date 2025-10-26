@@ -15,5 +15,9 @@ public interface PatternInt {
     public int countMatches();
 
     public void decrementCountMatches();
+    
+    public void setCapturedText(String capturedText);
+    
+    public String getCapturedText();
 
 }

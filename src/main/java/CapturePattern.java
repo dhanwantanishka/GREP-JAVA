@@ -18,7 +18,15 @@ public class CapturePattern extends AbstractPattern {
         int captureIndex = Integer.parseInt(patternAsString.substring(1));
         PatternInt patternAggregator = listCaptures.get(captureIndex - 1);
         System.err.println("CapturePattern captureGroupPattern=" + patternAggregator.getPatternString());
-        return patternAggregator.matchPattern(input, patternAggregator.getPatternString());
-
+        
+        // For backreferences, we need to check if the input starts with the captured text
+        String capturedText = patternAggregator.getCapturedText();
+        if (capturedText != null && input.startsWith(capturedText)) {
+            PatternResult result = new PatternResult(true);
+            result.setCaptureGroup(capturedText);
+            return result;
+        }
+        
+        return new PatternResult(false);
     }
 }
